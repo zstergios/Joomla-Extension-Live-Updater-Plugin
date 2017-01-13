@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="2.5" type="plugin" group="system" method="upgrade">
+	<name>J! Extensions Live Updater</name>
+	<version>1.4</version>
+	<modified>04 Jan 2017</modified>
+	<creationDate>03 Jan 2017</creationDate>
+	<author>WEB EXPERT SERVICES LTD</author>
+	<authorEmail>info@web-expert.gr</authorEmail>
+	<authorUrl>http://www.web-expert.gr/</authorUrl>
+	<copyright>(C) 2007-2017 Web-expert.gr - Joomla Extensions - Hosting!</copyright>
+	<license>GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html</license>
+	<description>This plugin helper third party extensions to accomblish live update feature. Ideal for commercial and free extensions</description>
+	<scriptfile>script.php</scriptfile>
+	<files>
+		<filename plugin="jextupdater">jextupdater.php</filename>
+		<filename>index.html</filename>
+	</files>
+	<config>
+		<fields name="params">
+			
+		</fields>
+	</config>
+	<updateservers>
+		<server type="extension" priority="1" name="J! Extensions Live Updater">https://web-expert.gr/updates/plg_jextupdater.xml</server>
+		<server type="extension" priority="2" name="J! Extensions Live Updater">http://web-expert.gr/updates/plg_jextupdater.xml</server>
+	</updateservers>
+</extension>
