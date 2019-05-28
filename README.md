@@ -28,6 +28,6 @@ Read the documentation for more details. It's too easy! Actually does not requir
 
 For developers:
 
-    Download the documentation https://www.web-expert.gr/clients/dl.php?type=d&id=117
-    Discusion on forum.joomla.org  https://forum.joomla.org/viewtopic.php?f=715&t=945311
-    JED Listing (soon link)
+   Download the documentation https://www.web-expert.gr/clients/dl.php?type=d&id=117
+   Discusion on forum.joomla.org  https://forum.joomla.org/viewtopic.php?f=715&t=945311
+   JED Listing (soon link)
