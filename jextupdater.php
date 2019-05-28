@@ -1,7 +1,7 @@
 <?php
 /**
  * @package     Extensions Live Updater Plugin for Joomla
- * @version     1.6
+ * @version     1.7
  * @company   	WEB EXPERT SERVICES LTD
  * @developer   Stergios Zgouletas <info@web-expert.gr>
  * @link        http://www.web-expert.gr
@@ -39,6 +39,12 @@ class plgSystemJExtUpdater extends JPlugin
 			$params['keyparam']=reset($allowedKeyNames);
 		}
 		
+		$ddlKey='dlid';
+		if(isset($params['ddlkey']) && !empty($params['ddlkey']))
+		{
+			$ddlKey=JString::trim(strip_tags($params['ddlkey']));
+		}
+		
 		jimport('joomla.filesystem.file');	
 		if(!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
 		$extensionClassName=ucfirst(strtolower($params['extname']));
@@ -47,7 +53,7 @@ class plgSystemJExtUpdater extends JPlugin
 		$params['php']=PHP_VERSION;
 		$params['ioncube']=function_exists('ioncube_loader_version')?ioncube_loader_version():'';
 		$params['joomla']=JVERSION;
-		$params['dlid']=null; //reset if exists
+		$params[$ddlKey]=null; //reset if exists
 		
 		if($params['type']=='module')
 		{
@@ -140,7 +146,7 @@ class plgSystemJExtUpdater extends JPlugin
 		//Key is Only for Paid Extensions
 		if($params['license']!='free')
 		{
-			$params['dlid']=preg_replace("/[^a-zA-Z0-9_-]/",'',$extensionParams->get($params['keyparam'],$params['dlid']));
+			$params[$ddlKey]=preg_replace("/[^a-zA-Z0-9_-]/",'',$extensionParams->get($params['keyparam'],$params[$ddlKey]));
 		}
 		$params=array_filter($params); //clean empty values
 		$url=str_replace($query,http_build_query($params),$url);

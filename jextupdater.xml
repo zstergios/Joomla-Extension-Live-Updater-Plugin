@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension version="2.5" type="plugin" group="system" method="upgrade">
 	<name>Extensions Live Updater</name>
-	<version>1.6</version>
+	<version>1.7</version>
 	<modified>28-05-2019</modified>
 	<creationDate>03-01-2017</creationDate>
 	<author>WEB EXPERT SERVICES LTD</author>
