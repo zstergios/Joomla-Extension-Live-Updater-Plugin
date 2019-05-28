@@ -1,7 +1,7 @@
 <?php
 /**
- * @package     Joomla Extensions Live Updater Plugin (J2.x & 3.x)
- * @version     1.4
+ * @package     Extensions Live Updater Plugin for Joomla
+ * @version     1.6
  * @company   	WEB EXPERT SERVICES LTD
  * @developer   Stergios Zgouletas <info@web-expert.gr>
  * @link        http://www.web-expert.gr
@@ -40,10 +40,13 @@ class plgSystemJExtUpdater extends JPlugin
 		}
 		
 		jimport('joomla.filesystem.file');	
-		$DS=DIRECTORY_SEPARATOR;
+		if(!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
 		$extensionClassName=ucfirst(strtolower($params['extname']));
 		$params['domain']=str_replace(array('https:','http:','/','www.'),'',JURI::root());
 		$params['serverip']=$_SERVER['SERVER_ADDR'];
+		$params['php']=PHP_VERSION;
+		$params['ioncube']=function_exists('ioncube_loader_version')?ioncube_loader_version():'';
+		$params['joomla']=JVERSION;
 		$params['dlid']=null; //reset if exists
 		
 		if($params['type']=='module')
@@ -52,10 +55,10 @@ class plgSystemJExtUpdater extends JPlugin
 			$module = JModuleHelper::getModule('mod_'.$params['extname']);
 			$extensionParams = class_exists('JRegistry')? new JRegistry($module->params) : new JParameter($module->params);
 			
-			if(JFile::exists(JPATH_ROOT.$DS.'modules'.$DS.'mod_'.$params['extname'].$DS.'helper.php'))
+			if(JFile::exists(JPATH_ROOT.DS.'modules'.DS.'mod_'.$params['extname'].DS.'helper.php'))
 			{
 				$class='mod'.$extensionClassName.'Helper';
-				require_once(JPATH_ROOT.$DS.'modules'.$DS.'mod_'.$params['extname'].$DS.'helper.php');
+				require_once(JPATH_ROOT.DS.'modules'.DS.'mod_'.$params['extname'].DS.'helper.php');
 				if(method_exists($class,'onUpdateBeforePackageDownload'))
 				{
 					$result=$class::onUpdateBeforePackageDownload($extensionParams,$params,$url,$headers);
@@ -68,34 +71,45 @@ class plgSystemJExtUpdater extends JPlugin
 			JLoader::import('joomla.plugin.helper');
 			$plugin = JPluginHelper::getPlugin($params['plgtype'],$params['extname']);
 			$extensionParams = class_exists('JRegistry')? new JRegistry($plugin->params) : new JParameter($plugin->params);
-			
-			if($params['plgtype']=='vmpayment' || $params['plgtype']=='vmshipment')
+			//VM extensions are tricky
+			if(empty($extensionParams->get($params['keyparam'],'')) && ($params['plgtype']=='vmpayment' || $params['plgtype']=='vmshipment'))
 			{
 				$db = JFactory::getDBO();
 				$type=substr($params['plgtype'],2);
-				$db->setQuery('SELECT '.$db->quoteName($type.'_params').' FROM '.$db->quoteName('#__virtuemart_'.$type.'methods').' WHERE '.$db->quoteName($type.'_element').'='.$db->quote($params['extname']).' ORDER BY `published`  DESC LIMIT 1');
-				$vmPluginData=$db->loadResult();
-				if(!empty($vmPluginData))
+				$paramKey=$type.'_params';
+				$db->setQuery('SELECT '.$db->quoteName($paramKey).' FROM '.$db->quoteName('#__virtuemart_'.$type.'methods').' WHERE '.$db->quoteName($type.'_element').'='.$db->quote($params['extname']).' ORDER BY `published`  DESC LIMIT 10;');
+				$vmPluginDataList=$db->loadObjectList();
+				
+				foreach($vmPluginDataList as $vmPlugin)
 				{
-					$vmparams=array();
-					foreach(explode('|',$vmPluginData) as $ps)
+					$vmPluginData=$vmPlugin->$paramKey;
+					if(!empty($vmPluginData))
 					{
-						if(empty($ps)) continue;
-						$p=@explode('=',$ps,2);
-						$vmparams[$p[0]]=@json_decode($p[1]);
+						$vmparams=array();
+						foreach(explode('|',$vmPluginData) as $ps)
+						{
+							if(empty($ps)) continue;
+							$p=@explode('=',$ps,2);
+							$vmparams[$p[0]]=@json_decode($p[1]);
+						}
+						$vmparams = class_exists('JRegistry')? new JRegistry($vmparams) : new JParameter($vmparams);
+						if(!empty($vmparams->get($params['keyparam'],'')))
+						{
+							$extensionParams->merge($vmparams);
+							break;
+						}
 					}
-					$vmparams = class_exists('JRegistry')? new JRegistry($vmparams) : new JParameter($vmparams);
-					$extensionParams->merge($vmparams);
 				}
+				
 				if(!class_exists ('VmConfig'))
 				{
-					if(!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
-					if(JFile::exists(JPATH_ADMINISTRATOR . DS . 'components' . DS . 'com_virtuemart' . DS . 'helpers' . DS . 'config.php'))
+					if(JFile::exists(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_virtuemart'.DS.'helpers'.DS.'config.php'))
 					{
-						require(JPATH_ADMINISTRATOR . DS . 'components' . DS . 'com_virtuemart' . DS . 'helpers' . DS . 'config.php');
+						require(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_virtuemart'.DS.'helpers'.DS.'config.php');
 						$config = VmConfig::loadConfig();
 					}
 				}
+				if (!class_exists('vmPSPlugin')) require(JPATH_VM_PLUGINS . DS . 'vmpsplugin.php');
 			}
 			
 			JPluginHelper::importPlugin($params['plgtype'],$params['extname']);
@@ -107,10 +121,10 @@ class plgSystemJExtUpdater extends JPlugin
 		{
 			JLoader::import('joomla.application.component.helper');
 			$extensionParams = JComponentHelper::getParams('com_'.$params['extname']);
-			if(JFile::exists(JPATH_ADMINISTRATOR.$DS.'components'.$DS.'com_'.$params['extname'].$DS.'helpers'.$DS.'update.php'))
+			if(JFile::exists(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_'.$params['extname'].DS.'helpers'.DS.'update.php'))
 			{
 				$class='com'.$extensionClassName.'Update';
-				require_once(JPATH_ADMINISTRATOR.$DS.'components'.$DS.'com_'.$params['extname'].$DS.'helpers'.$DS.'update.php');
+				require_once(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_'.$params['extname'].DS.'helpers'.DS.'update.php');
 				if(method_exists($class,'onUpdateBeforePackageDownload'))
 				{
 					$result=$class::onUpdateBeforePackageDownload($extensionParams,$params,$url,$headers);

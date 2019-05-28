@@ -1,7 +1,7 @@
 <?php
 /**
  * @package     Joomla Extensions Live Updater Plugin
- * @version     1.2
+ * @version     1.6
  * @company   	WEB EXPERT SERVICES LTD
  * @developer   Stergios Zgouletas <info@web-expert.gr>
  * @link        http://www.web-expert.gr
