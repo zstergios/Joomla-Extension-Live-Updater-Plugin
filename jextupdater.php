@@ -15,7 +15,7 @@ class plgSystemJExtUpdater extends JPlugin
 {
 	public function onInstallerBeforePackageDownload(&$url, &$headers)
     {
-		//Permformance Check
+		//Performance Check
 		if(strpos($url,'=JExtUpdater')===false) return true;
 		
 		//Security Reasons		
