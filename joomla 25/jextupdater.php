@@ -1,39 +1,21 @@
 <?php
 /**
  * @package     Extensions Live Updater Plugin for Joomla
- * @version     2.0
+ * @version     1.7
  * @company   	WEB EXPERT SERVICES LTD
  * @developer   Stergios Zgouletas <info@web-expert.gr>
  * @link        http://www.web-expert.gr
- * @copyright   Copyright (C) 2007-2023 Web-Expert.gr All Rights Reserved
+ * @copyright   Copyright (C) 2007-2017 Web-Expert.gr All Rights Reserved
  * @license     http://www.gnu.org/licenses/gpl-2.0.html GNU/GPL
  */
  
 defined('_JEXEC') or die('Restricted access');
-
-use Joomla\CMS\Factory as JFactory;
-use Joomla\CMS\Plugin\CMSPlugin as JPlugin;
-use Joomla\String\StringHelper as JString;
-use Joomla\CMS\Uri\Uri as JURI;
-use Joomla\CMS\Filesystem\Folder as JFolder;
-use Joomla\CMS\Filesystem\File as JFile;
-use Joomla\CMS\Plugin\PluginHelper as JPluginHelper;
-use Joomla\CMS\Component\ComponentHelper as JComponentHelper;
-use Joomla\CMS\Module\ModuleHelper as JModuleHelper;
-
+jimport( 'joomla.plugin.plugin' );
 class plgSystemJExtUpdater extends JPlugin
 {
-	protected $app; 
-
-	public function __construct(&$subject, $config)
-	{
-		parent::__construct($subject, $config);
-		if(!$this->app) $this->app=JFactory::getApplication();
-	}
-	
 	public function onInstallerBeforePackageDownload(&$url, &$headers)
     {
-		//Performance Check
+		//Permformance Check
 		if(strpos($url,'=JExtUpdater')===false) return true;
 		
 		//Security Reasons		
@@ -63,9 +45,10 @@ class plgSystemJExtUpdater extends JPlugin
 			$ddlKey=JString::trim(strip_tags($params['ddlkey']));
 		}
 		
+		jimport('joomla.filesystem.file');	
 		if(!defined('DS')) define('DS', DIRECTORY_SEPARATOR);
 		$extensionClassName=ucfirst(strtolower($params['extname']));
-		$params['domain']=rtrim(str_replace(array('https:','http:','www.'),'',JURI::root()),'/');
+		$params['domain']=str_replace(array('https:','http:','/','www.'),'',JURI::root());
 		$params['serverip']=$_SERVER['SERVER_ADDR'];
 		$params['php']=PHP_VERSION;
 		$params['ioncube']=function_exists('ioncube_loader_version')?ioncube_loader_version():'';
@@ -91,11 +74,11 @@ class plgSystemJExtUpdater extends JPlugin
 		}
 		elseif($params['type']=='plugin')
 		{
+			JLoader::import('joomla.plugin.helper');
 			$plugin = JPluginHelper::getPlugin($params['plgtype'],$params['extname']);
 			$extensionParams = class_exists('JRegistry')? new JRegistry($plugin->params) : new JParameter($plugin->params);
-			$keyParameter=$extensionParams->get($params['keyparam'],'');
 			//VM extensions are tricky
-			if(empty($keyParameter) && ($params['plgtype']=='vmpayment' || $params['plgtype']=='vmshipment'))
+			if(empty($extensionParams->get($params['keyparam'],'')) && ($params['plgtype']=='vmpayment' || $params['plgtype']=='vmshipment'))
 			{
 				$db = JFactory::getDBO();
 				$type=substr($params['plgtype'],2);
@@ -124,20 +107,25 @@ class plgSystemJExtUpdater extends JPlugin
 					}
 				}
 				
-				if(JFile::exists(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_virtuemart'.DS.'helpers'.DS.'config.php'))
+				if(!class_exists ('VmConfig'))
 				{
-					if(!class_exists ('VmConfig')) require(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_virtuemart'.DS.'helpers'.DS.'config.php');
-					$config = VmConfig::loadConfig();
+					if(JFile::exists(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_virtuemart'.DS.'helpers'.DS.'config.php'))
+					{
+						require(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_virtuemart'.DS.'helpers'.DS.'config.php');
+						$config = VmConfig::loadConfig();
+					}
 				}
 				if (!class_exists('vmPSPlugin')) require(JPATH_VM_PLUGINS . DS . 'vmpsplugin.php');
 			}
 			
 			JPluginHelper::importPlugin($params['plgtype'],$params['extname']);
-			$result=$this->trigger('onUpdateBeforePackageDownload', array($extensionParams,$params,$url,$headers));
+			$dispatcher = version_compare(JVERSION,'3.0','ge')?JEventDispatcher::getInstance():JDispatcher::getInstance();
+			$result=$dispatcher->trigger('onUpdateBeforePackageDownload', array($extensionParams,$params,$url,$headers));
 			if(is_bool($result)) return $result;
 		}
 		elseif($params['type']=='component')
 		{
+			JLoader::import('joomla.application.component.helper');
 			$extensionParams = JComponentHelper::getParams('com_'.$params['extname']);
 			if(JFile::exists(JPATH_ADMINISTRATOR.DS.'components'.DS.'com_'.$params['extname'].DS.'helpers'.DS.'update.php'))
 			{
@@ -164,18 +152,4 @@ class plgSystemJExtUpdater extends JPlugin
 		$url=str_replace($query,http_build_query($params),$url);
 		return true;
     }
-	
-	function trigger($event,$params=array())
-	{
-		if(version_compare(JVERSION,'4.0.0')>= 0)
-		{
-			$rsp= $this->app->triggerEvent($event,$params);
-		}
-		else
-		{
-			$dispatcher = version_compare(JVERSION,'3.0','ge')?JEventDispatcher::getInstance():JDispatcher::getInstance();
-			$rsp= $dispatcher->trigger($event,$params);
-		}
-		return $rsp;
-	}
 }

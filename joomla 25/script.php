@@ -1,7 +1,7 @@
 <?php
 /**
  * @package     Joomla Extensions Live Updater Plugin
- * @version     2.0
+ * @version     1.6
  * @company   	WEB EXPERT SERVICES LTD
  * @developer   Stergios Zgouletas <info@web-expert.gr>
  * @link        http://www.web-expert.gr
@@ -15,7 +15,7 @@ class plgSystemJextupdaterInstallerScript
 	{
 		if($type == 'install') 
 		{       
-			$db = \Joomla\CMS\Factory::getDbo();
+			$db = JFactory::getDbo();
 			$query = $db->getQuery(true);
 			$fields = array($db->quoteName('enabled').' = 1');
 
@@ -27,6 +27,14 @@ class plgSystemJextupdaterInstallerScript
 			$query->update($db->quoteName('#__extensions'))->set($fields)->where($conditions);
 			$db->setQuery($query);   
 			version_compare(JVERSION,'3.0','ge')? $db->execute() : $db->query();    
+		}
+		
+		require_once(JPATH_ADMINISTRATOR.'/components/com_installer/models/update.php');
+		$model = version_compare(JVERSION,'3.0','ge')? JModelLegacy::getInstance('Update', 'InstallerModel') : JModel::getInstance('Update', 'InstallerModel');
+		
+		if($model->purge())
+		{
+			JFactory::getApplication()->enqueueMessage('Joomla Updates Cache Purged!');
 		}
 	}
 }
