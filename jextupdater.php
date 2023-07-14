@@ -20,6 +20,7 @@ use Joomla\CMS\Filesystem\File as JFile;
 use Joomla\CMS\Plugin\PluginHelper as JPluginHelper;
 use Joomla\CMS\Component\ComponentHelper as JComponentHelper;
 use Joomla\CMS\Module\ModuleHelper as JModuleHelper;
+use Joomla\Registry\Registry as JRegistry;
 
 class plgSystemJExtUpdater extends JPlugin
 {
@@ -74,7 +75,6 @@ class plgSystemJExtUpdater extends JPlugin
 		
 		if($params['type']=='module')
 		{
-			JLoader::import('joomla.application.module.helper' ); 
 			$module = JModuleHelper::getModule('mod_'.$params['extname']);
 			$extensionParams = class_exists('JRegistry')? new JRegistry($module->params) : new JParameter($module->params);
 			
@@ -167,7 +167,7 @@ class plgSystemJExtUpdater extends JPlugin
 	
 	function trigger($event,$params=array())
 	{
-		if(version_compare(JVERSION,'4.0.0')>= 0)
+		if(version_compare(JVERSION,'4.0.0','ge'))
 		{
 			$rsp= $this->app->triggerEvent($event,$params);
 		}
